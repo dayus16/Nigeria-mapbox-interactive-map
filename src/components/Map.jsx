@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as mapboxgl from "mapbox-gl/esm";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { FaRoad, FaCarSide, FaWalking } from "react-icons/fa";
@@ -8,6 +8,21 @@ const Map = () => {
   const mapRef = useRef();
   const mapContainerRef = useRef();
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESSTOKEN;
+
+  const [stops, setStops] = useState([]);
+
+  const addStop = (city) => {
+    setStops((prev) => {
+      const alreadyAdded = prev.find((s) => s.name === city.name);
+
+      if (alreadyAdded) {
+        alert(`${city.name} is already in your trip`);
+        return prev;
+      }
+
+      return [...prev, city];
+    });
+  };
 
   useEffect(() => {
     mapRef.current = new mapboxgl.Map({
@@ -24,8 +39,8 @@ const Map = () => {
       nigeriaCities.forEach((city) => {
         const markerEl = document.createElement("div");
         markerEl.style.cssText = `
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       background: #7C3A1E;
       border: 2px solid white;
@@ -37,8 +52,13 @@ const Map = () => {
           .setLngLat(city.coordinates)
           .setPopup(new mapboxgl.Popup().setText(city.name))
           .addTo(mapRef.current);
+
+        markerEl.addEventListener("click", () => {
+          addStop(city);
+        });
       });
     });
+
     return () => {
       mapRef.current.remove();
     };
@@ -98,7 +118,11 @@ const Map = () => {
           ref={mapContainerRef}
           style={{ height: "100vh" }}
         ></div>
-        <div className="w-[30%]"></div>
+        <div className="w-[30%]">
+          {stops.map((stop) => (
+            <h1>{stop.name}</h1>
+          ))}
+        </div>
       </div>
     </div>
   );
