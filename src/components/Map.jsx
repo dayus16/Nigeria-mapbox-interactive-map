@@ -10,19 +10,8 @@ const Map = () => {
   const accessToken = import.meta.env.VITE_MAPBOX_ACCESSTOKEN;
 
   const [stops, setStops] = useState([]);
-
-  const addStop = (city) => {
-    setStops((prev) => {
-      const alreadyAdded = prev.find((s) => s.name === city.name);
-
-      if (alreadyAdded) {
-        alert(`${city.name} is already in your trip`);
-        return prev;
-      }
-
-      return [...prev, city];
-    });
-  };
+  const [loading, setLoading] = useState(false);
+  const [tripInfo, setTripInfo] = useState(null);
 
   useEffect(() => {
     mapRef.current = new mapboxgl.Map({
@@ -63,6 +52,76 @@ const Map = () => {
       mapRef.current.remove();
     };
   }, []);
+
+  const addStop = (city) => {
+    setStops((prev) => {
+      const alreadyAdded = prev.find((s) => s.name === city.name);
+      if (alreadyAdded) {
+        alert(`${city.name} is already in your trip`);
+        return prev;
+      }
+      return [...prev, city];
+    });
+  };
+
+  const removeStop = (i) => {
+    console.log("button clicked", i);
+    const updateStops = stops.filter((_, stop) => stop !== i);
+    return setStops(updateStops);
+  };
+
+  useEffect(() => {
+    if (stops.length < 2) return;
+    const calculateRoute = async () => {
+      setLoading(true);
+      const waypoints = stops
+        .map((stop) => stop.coordinates.join(","))
+        .join(";");
+      try {
+        const res = await fetch(
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${waypoints}?geometries=geojson&access_token=${accessToken}`,
+        );
+        const data = await res.json();
+        console.log("Route data:", data);
+        const route = data.routes[0];
+        const distance = (route.distance / 1000).toFixed(0);
+        const time = (route.duration / 3600).toFixed(2);
+        setTripInfo({ distance, time });
+
+        if (mapRef.current.getSource("route")) {
+          mapRef.current.removeLayer("route-line");
+          mapRef.current.removeSource("route");
+        }
+
+        mapRef.current.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            geometry: route.geometry,
+          },
+        });
+
+        mapRef.current.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#7C3A1E",
+            "line-width": 5,
+            "line-opacity": 0.9,
+          },
+        });
+      } catch (err) {
+        console.error("Route Error:", err);
+      }
+      setLoading(false);
+    };
+    calculateRoute();
+  }, [stops]);
 
   return (
     <div>
@@ -118,9 +177,39 @@ const Map = () => {
           ref={mapContainerRef}
           style={{ height: "100vh" }}
         ></div>
-        <div className="w-[30%]">
-          {stops.map((stop) => (
-            <h1>{stop.name}</h1>
+        <div className="w-[30%] overflow-y-auto p-4">
+          <h1 className="text-xl text-gray-200 font-semibold">Trip Planner</h1>
+          {stops.length === 0 && (
+            <div>
+              <small className="text-gray-400">
+                Click cities on the map to add them to your trip
+              </small>
+            </div>
+          )}
+          {stops.map((stop, i) => (
+            <div
+              key={stop.name}
+              className="flex justify-between items-center mt-4 border border-gray-600 bg-[#262624] rounded-lg p-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-800 rounded-full h-9 w-9 flex justify-center items-center">
+                  <p>{i + 1}</p>
+                </div>
+
+                <div>
+                  <h1 className="text-lg text-gray-200 font-semibold">
+                    {stop.name}
+                  </h1>
+                  <h3 className="text-gray-300 text-sm">{stop.state}</h3>
+                </div>
+              </div>
+              <button
+                className="text-red-400 text-xs"
+                onClick={() => removeStop(i)}
+              >
+                Remove
+              </button>
+            </div>
           ))}
         </div>
       </div>
