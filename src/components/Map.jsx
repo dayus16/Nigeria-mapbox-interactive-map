@@ -123,6 +123,16 @@ const Map = () => {
     calculateRoute();
   }, [stops]);
 
+  const clearAllTrips = () => {
+    setStops([]);
+    setTripInfo(null);
+
+    if (mapRef.current.getSource("route")) {
+      mapRef.current.removeLayer("route-line");
+      mapRef.current.removeSource("route");
+    }
+  };
+
   return (
     <div>
       <header className="bg-[#7c3a1e]">
@@ -142,18 +152,20 @@ const Map = () => {
           </div>
           <div className="flex items-center gap-7">
             <div>
-              <h1 className="text-center text-lg font-bold text-gray-200">0</h1>
+              <h1 className="text-center text-lg font-bold text-gray-200">
+                {stops ? stops.length : "0"}
+              </h1>
               <small className="text-gray-300">Stops</small>
             </div>
             <div>
               <h1 className="text-center text-lg font-bold text-gray-200">
-                230km
+                {tripInfo ? `${tripInfo.distance}km` : "0km"}
               </h1>
               <small className="text-gray-300">Total distance</small>
             </div>
             <div>
               <h1 className="text-center text-lg font-bold text-gray-200">
-                7hrs
+                {tripInfo ? `~${tripInfo.time}hrs` : "0hr"}
               </h1>
               <small className="text-gray-300">Est. time</small>
             </div>
@@ -186,6 +198,33 @@ const Map = () => {
               </small>
             </div>
           )}
+          {loading && (
+            <p className="text-gray-400 text-sm mt-3 text-center">
+              Calculating route...
+            </p>
+          )}
+          {tripInfo && (
+            <div className="bg-[#fdf0e8] rounded-lg p-3 mt-4 ">
+              <div className="flex justify-between">
+                <p className="text-sm text-[#442316]">from</p>
+                <p className="text-sm text-[#442316]">{stops[0].name}</p>
+              </div>
+              <div className="flex justify-between mt-2">
+                <p className="text-sm text-[#442316]">To</p>
+                <p className="text-sm text-[#442316]">
+                  {stops[stops.length - 1].name}
+                </p>
+              </div>
+              <div className="flex justify-between mt-2">
+                <p className="text-sm text-[#442316]">Total Distance</p>
+                <p className="text-sm text-[#442316]">{tripInfo.distance} km</p>
+              </div>
+              <div className="flex justify-between mt-2">
+                <p className="text-sm text-[#442316]">Estimated Time</p>
+                <p className="text-sm text-[#442316]">~{tripInfo.time} hours</p>
+              </div>
+            </div>
+          )}
           {stops.map((stop, i) => (
             <div
               key={stop.name}
@@ -200,6 +239,13 @@ const Map = () => {
                   <h1 className="text-lg text-gray-200 font-semibold">
                     {stop.name}
                   </h1>
+                  <p className="text-gray-400 text-xs">
+                    {i === 0
+                      ? "Starting point"
+                      : i === stops.length - 1
+                        ? "Final destination"
+                        : stop.state}
+                  </p>
                   <h3 className="text-gray-300 text-sm">{stop.state}</h3>
                 </div>
               </div>
@@ -211,6 +257,16 @@ const Map = () => {
               </button>
             </div>
           ))}
+          <div>
+            {stops.length > 0 && (
+              <button
+                onClick={clearAllTrips}
+                className="w-full bg-amber-800 rounded-lg py-2 px-4 mt-4 hover:bg-amber-700 duration-300 transition-all ease-in-out text-lg font-semibold"
+              >
+                Clear all Stops
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
