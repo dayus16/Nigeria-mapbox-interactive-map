@@ -289,11 +289,13 @@ const Map = () => {
             w-full
             md:w-[65%]
             lg:w-[70%]
+            max-h-[70vh]
+            md:max-h-screen
           "
           id="map"
           ref={mapContainerRef}
           style={{
-            height: "70vh",
+            height: "100vh",
           }}
         ></div>
 
@@ -307,7 +309,7 @@ const Map = () => {
             p-4
             sm:p-5
             max-h-[70vh]
-            md:h-[70vh]
+            md:h-screen
           "
         >
           <h1 className="text-xl text-gray-200 font-semibold">Trip Planner</h1>
